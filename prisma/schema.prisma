@@ -1,0 +1,70 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Judgment {
+  id           String       @id @default(cuid())
+  title        String
+  courtName    String?
+  caseNumber   String?
+  judgmentDate DateTime?
+  filePath     String?
+  fileName     String
+  fullText     String?
+  pageCount    Int?
+  status       String       @default("UPLOADED")
+  uploadedAt   DateTime     @default(now())
+  obligations  Obligation[]
+  parties      Party[]
+}
+
+model Party {
+  id          String       @id @default(cuid())
+  judgmentId  String
+  name        String
+  role        String
+  judgment    Judgment     @relation(fields: [judgmentId], references: [id], onDelete: Cascade)
+  obligations Obligation[]
+}
+
+model Obligation {
+  id                 String             @id @default(cuid())
+  judgmentId         String
+  type               String
+  status             String             @default("PENDING")
+  priority           String
+  title              String
+  description        String
+  deadline           DateTime?
+  deadlineText       String?
+  responsiblePartyId String?
+  sourceExcerpt      String
+  sourcePage         Int?
+  reasoning          String
+  confidence         Float
+  verified           Boolean            @default(false)
+  verifierNotes      String?
+  verifiedAt         DateTime?
+  createdAt          DateTime           @default(now())
+  judgment           Judgment           @relation(fields: [judgmentId], references: [id], onDelete: Cascade)
+  responsibleParty   Party?             @relation(fields: [responsiblePartyId], references: [id])
+  updates            ObligationUpdate[]
+
+  @@index([judgmentId, status])
+}
+
+model ObligationUpdate {
+  id           String     @id @default(cuid())
+  obligationId String
+  status       String
+  note         String
+  evidenceUrl  String?
+  updatedBy    String
+  updatedAt    DateTime   @default(now())
+  obligation   Obligation @relation(fields: [obligationId], references: [id], onDelete: Cascade)
+}
